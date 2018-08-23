@@ -42,9 +42,9 @@ def findFile(need_find, contains_file='-a'):
 
 def echo_help():
 	print('功能：查找所有包含传入字符串的文件')
-	print('格式与参数：-[?/h/help], -[a/all/s/S/r/R/f/F] str, 参数不区分大小写，但字符串str区分大小写')
+	print('格式与参数：-[?/h/help], -[a/s/S/r/R/f/F] str, 参数不区分大小写，但字符串str区分大小写')
 	print('?/h/help: 查看帮助信息')
-	print('   a/all: 查找所有包含该字符串的文件')
+	print('     a: 查找所有包含该字符串的文件')
 	print('     s  : 查找Success开头且包含该字符串的文件')
 	print('     r  : 查找Receipt开头且包含该字符串的文件')
 	print('     rc : 查找Receipt_C开头且包含该字符串的文件')
