@@ -12,9 +12,6 @@ class array_list(list):
         a = (b, c)
         return a
 
-    def array_chunk2(self):
-        pass
-
 
 if __name__ == "__main__":
     a = array_list((1, 2, 3, 4))
