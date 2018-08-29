@@ -1,22 +1,39 @@
 # coding=utf8
-
+###这个多线程写的是真JB垃圾。。。毫无意义###
+import functools
 import os
 import re
 import sys
+import time
 import zipfile
 import datetime
+import threading
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_DIR = r'C:\ImpPath\Sas'
 PARAMETER = ('-a', '-s', '-r', '-rc', '-rd', '-f')
 
 
+def used_time(f):
+    """打印程序耗时"""
+    @functools.wraps(f)
+    def wrapper(*args, **kwargs):
+        start = time.time()
+        res = f(*args, **kwargs)
+        end = time.time()
+        print('used_time = ', end - start)
+        return res
+    return wrapper
+
+
 class FindStrToFile(object):
     def __init__(self, para):
         self.para = para
         self.para_list = []
-        self.file_name = []
+        self.out_file_name = []
         self.find_str = []
+        self.file_names = []
+        self.lock = threading.Lock()
         self.parsePara()
 
     def parsePara(self):
@@ -29,12 +46,12 @@ class FindStrToFile(object):
                 if _para.startswith('-') and len(_para) > 1:
                     self.para_list.append(_para.split('-')[1].lower())
                 elif _para.startswith('>') and len(_para) > 1:
-                    self.file_name.append(_para.split('>')[1])
+                    self.out_file_name.append(_para.split('>')[1])
                 else:
                     self.find_str.append(_para)
 
             if self.para_list.count('?') + self.para_list.count('h') + self.para_list.count('help') > 1 or len(
-                    self.find_str) > 1 or len(self.file_name) > 1 or len(self.para_list) > 3 or len(
+                    self.find_str) > 1 or len(self.out_file_name) > 1 or len(self.para_list) > 3 or len(
                 self.para_list) > len(set(self.para_list)):
                 print('参数有误, 查看帮助请输入参数：-?/h/help')
                 sys.exit(-1)
@@ -71,6 +88,7 @@ class FindStrToFile(object):
                 para_time = "{}-{}-{}".format(para[:4], para[4:6], para[6:])
 
         file_lists = self.showFile(para_file, para_path, para_time)
+        print("len(file_lists) = ", len(file_lists))
         for file_name in file_lists:
             yield file_name
 
@@ -93,26 +111,37 @@ class FindStrToFile(object):
                             file_lists.append(os.path.join(root, file_name))
         return file_lists
 
-    def findFile(self):
+    def findFile(self, index):
+        print("index = ", index)
         need_find = self.find_str[0]
-        index = 0
         ret_file_list = []
-        for shut_file_name in self.filterFile():
-            index += 1
-            full_file_name = os.path.join(DEFAULT_DIR, shut_file_name)
-            if full_file_name.endswith('.zip'):
+        while True:
+            try:
+                with self.lock:
+                    full_file_name = self.files.__next__()
+                print("full_file_name = ", full_file_name, 'threading.current_thread() = ', threading.current_thread(), 'index = ', index)
+            except Exception as e:
+                print('大爷好...', 'e = ', e)
+                break
+            if full_file_name.endswith('.zip'):  # 因为查找过程中，后台脚本有移动文件的动作，所以打开操作有可能会报错
                 with zipfile.ZipFile(full_file_name) as f:
                     for name in f.namelist():
                         content = f.read(name).decode('utf8')
                         if content.find(need_find) > -1:
-                            ret_file_list.append('_&_'.join([shut_file_name, name]))
+                            ret_file_list.append('_&_'.join([full_file_name, name]))
             else:
                 with open(full_file_name, 'r', encoding='utf-8') as f:
                     content = f.read()
                     if content.find(need_find) > -1:
-                        ret_file_list.append(shut_file_name)
+                        ret_file_list.append(full_file_name)
 
-        return tuple(ret_file_list)
+        return self.showFindRet(ret_file_list)
+
+    def showFindRet(self, ret_file_list):
+        """追加到列表中，多线程需要加锁操作"""
+        with self.lock:
+            self.file_names.extend(ret_file_list)
+        return True
 
     @staticmethod
     def echo_help():
@@ -130,15 +159,26 @@ class FindStrToFile(object):
         print('   npts : 查找Npts文件夹下的目录')
         print('20180827: 查找日期文件夹下的目录，默认查找当天，6位日期')
 
+    @used_time
     def run(self):
         if (self.para_list.count('?') == 1 or self.para_list.count('h') == 1 or self.para_list.count(
                 'help') == 1) and len(self.para_list) == 1 and len(self.find_str) == 0:
             self.echo_help()
         else:
-            file_names = self.findFile()
-            if file_names:
+            self.files = self.filterFile()
+            t_list = []
+            for i in range(4):
+                t = threading.Thread(target=self.findFile, args=(i,))
+                t.name = '线程{}'.format(i)
+                t_list.append(t)
+            for t in t_list:
+                print('t.name = ', t.name)
+                t.start()
+            for t in t_list:
+                t.join()
+            if self.file_names:
                 print('已找到相关文件，文件名是:')
-                for file_name in file_names:
+                for file_name in self.file_names:
                     print(''.join(file_name))
             else:
                 print('未找到相关文件...')
