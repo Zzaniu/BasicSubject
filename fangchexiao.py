@@ -11,7 +11,7 @@ from itchat.content import *
 msg_dict = {}
 
 # 文件存储临时目录
-rev_tmp_dir = "d:/Zzaniu/weixin"
+rev_tmp_dir = "D:/E/Learn/微信防撤销"
 if not os.path.exists(rev_tmp_dir):
     os.mkdir(rev_tmp_dir)
 

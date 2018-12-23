@@ -1,0 +1,12 @@
+# docker 创建自定义网络
+docker network create --subnet=172.18.0.0/16 mynet
+
+# 启动mysql命令，并固定IP
+sudo docker run --name mysql55 --net testnet --ip 172.18.0.3 -itd -p 3306:3306 -e MYSQL_ROOT_PASSWORD=zaniu -v /dockerFolder/mysql:/dockerFolder/mysql mysql:5.5
+
+# 启动redis命令   需要自行下载redis.conf，
+注释bind使外部可连接
+daemonize yes # 用守护线程的方式启动
+requirepass yourpassword # 给redis设置密码
+appendonly yes # redis持久化
+docker run -itd -p 6380:6379 --net testnet --ip 172.18.0.2 --name redis02 --volumes-from mount redis /bin/bash

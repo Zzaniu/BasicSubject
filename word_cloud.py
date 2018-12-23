@@ -41,15 +41,15 @@ def generate_word_cloud(itchat):
     import os
     import numpy as np
 
-    alice_coloring = np.array(Image.open('d:\\tangweila.jpg'))
+    alice_coloring = np.array(Image.open('D:/E/Learn/timg.jpg'))
     my_wordcloud = WordCloud(background_color="white", max_words=2000, mask=alice_coloring,
-                             max_font_size=40, random_state=42,
-                             font_path='d:/arialuni.ttf').generate(wl_space_split)
+                             max_font_size=40, random_state=42, min_font_size=10,
+                             font_path='D:/E/Learn/ARIALUNI.TTF').generate(wl_space_split)
 
     plt.imshow(my_wordcloud)
     plt.axis("off")
     plt.show()
-    my_wordcloud.to_file(os.path.join("d:\\tangweila_cloud.png"))
+    my_wordcloud.to_file(os.path.join("D:/E/Learn/tangweila_cloud.png"))
     itchat.send_image("wechat_cloud.png", 'filehelper')
 
 
